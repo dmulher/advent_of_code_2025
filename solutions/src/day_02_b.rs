@@ -29,16 +29,21 @@ fn get_invalid_ids_in_range(start: u64, end: u64, length: u8) -> u64 {
   (1..=(length/2))
     .filter(|l| length % l == 0)
     .flat_map(|l| {
-      let div = 10u64.pow(l as u32);
-      let factor = (length / l) as u32;
-      ((start / div.pow(factor - 1))..=(end / div.pow(factor - 1)))
-        .map(|candidate| (0..factor).fold(0, |acc, _| (acc * div) + candidate))
+      (dec_shift_down(start, length - l)..=dec_shift_down(end, length - l))
+        .map(move |candidate| expand(candidate, l, length / l))
         .filter(|candidate| candidate >= &start && candidate <= &end)
-        .collect::<Vec<u64>>()
     })
     .collect::<HashSet<u64>>()
     .into_iter()
     .sum()
+}
+
+fn dec_shift_down(num: u64, spaces: u8) -> u64 {
+  num / (10u64.pow(spaces as u32))
+}
+
+fn expand(num: u64, length: u8, times: u8) -> u64 {
+  (0..times).fold(0, |acc, _| (acc * 10u64.pow(length as u32)) + num)
 }
 
 #[cfg(test)]
