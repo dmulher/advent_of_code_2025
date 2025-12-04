@@ -63,40 +63,60 @@ fn get_toilet_papers(contents: String) -> u32 {
         }
       }
       if surrounding < 4 {
-        rolls += change_adjacency(&mut map, i, j);
+        rolls += change_adjacency(&mut map, i, j, i, j);
+      } else {
+        map[i][j] = Spot::Roll(surrounding);
       }
     }
   }
-  println!("{:?}", map);
+  for line in map.iter() {
+    println!("{:?}", line);
+  }
   rolls
 }
 
-fn change_adjacency(map: &mut Vec<Vec<Spot>>, i: usize, j: usize) -> u32 {
+fn change_adjacency(map: &mut Vec<Vec<Spot>>, i: usize, j: usize, oi: usize, oj: usize) -> u32 {
   map[i][j] = Spot::None;
+  if i < 4 && i > 0 && j < 4 && j > 0 {
+    println!("Eradicated {}, {}", i, j);
+  }
   let mut changes: u32 = 1;
   if j > 0 {
-    changes += check_for_cascade(map, i, j-1);
+    changes += check_for_cascade(map, i, j-1, oi, oj);
   }
   if i > 0 {
     if j > 0 {
-      changes += check_for_cascade(map, i-1, j-1);
+      changes += check_for_cascade(map, i-1, j-1, oi, oj);
     }
-    changes += check_for_cascade(map, i-1, j);
+    changes += check_for_cascade(map, i-1, j, oi, oj);
     if j < map[i].len() - 1 {
-      changes += check_for_cascade(map, i-1, j+1);
+      changes += check_for_cascade(map, i-1, j+1, oi, oj);
+    }
+  }
+  if i < oi {
+    if j > 0 {
+      changes += check_for_cascade(map, i+1, j-1, oi, oj);
+    }
+    if i < oi - 1 {
+      changes += check_for_cascade(map, i+1, j, oi, oj);
+    }
+    if (i < oi - 1 && j < map[i].len() - 1) || j < oj {
+      changes += check_for_cascade(map, i+1, j+1, oi, oj);
     }
   }
   changes
 }
 
-fn check_for_cascade(map: &mut Vec<Vec<Spot>>, i: usize, j: usize) -> u32 {
+fn check_for_cascade(map: &mut Vec<Vec<Spot>>, i: usize, j: usize, oi: usize, oj: usize) -> u32 {
   let mut changes = 0u32;
   if let Spot::Roll(x) = map[i][j] {
-    if x <= 4 {
-      map[i][j] = Spot::None;
-      changes += 1 + change_adjacency(map, i, j);
+    if x == 4 {
+      changes += change_adjacency(map, i, j, oi, oj);
     } else {
       map[i][j] = Spot::Roll(x - 1);
+      if i == 2 && j == 2 {
+        println!("From {} to {}", x, x - 1);
+      }
     }
   }
   changes
@@ -109,10 +129,10 @@ mod tests {
   use utils::read_file_to_string;
 
   const DAY: u8 = 4;
-  const PART: utils::Part = utils::Part::A;
+  const PART: utils::Part = utils::Part::B;
 
   #[test]
-  fn test_day_04_a() {
+  fn test_day_04_b() {
     const EXAMPLE_ANSWER: Option<u32> = Some(43);
     const ANSWER: Option<u32> = None;
     match utils::run_method::<u32>(&main, DAY, PART, (EXAMPLE_ANSWER, ANSWER)) {
@@ -122,9 +142,9 @@ mod tests {
     }
   }
 
-  #[bench]
-  fn bench_day_04_a(b: &mut Bencher) {
-    let input = read_file_to_string(utils::get_file_name(DAY, None).as_str());
-    b.iter(|| main(input.clone()));
-  }
+  // #[bench]
+  // fn bench_day_04_b(b: &mut Bencher) {
+  //   let input = read_file_to_string(utils::get_file_name(DAY, None).as_str());
+  //   b.iter(|| main(input.clone()));
+  // }
 }
