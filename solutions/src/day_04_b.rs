@@ -77,9 +77,6 @@ fn get_toilet_papers(contents: String) -> u32 {
 
 fn change_adjacency(map: &mut Vec<Vec<Spot>>, i: usize, j: usize, oi: usize, oj: usize) -> u32 {
   map[i][j] = Spot::None;
-  if i < 4 && i > 0 && j < 4 && j > 0 {
-    println!("Eradicated {}, {}", i, j);
-  }
   let mut changes: u32 = 1;
   if j > 0 {
     changes += check_for_cascade(map, i, j-1, oi, oj);
@@ -93,8 +90,11 @@ fn change_adjacency(map: &mut Vec<Vec<Spot>>, i: usize, j: usize, oi: usize, oj:
       changes += check_for_cascade(map, i-1, j+1, oi, oj);
     }
   }
+  if (i == oi && oj > 1 && j < oj - 2) || (i < oi && j < map[i].len() - 1) {
+    changes += check_for_cascade(map, i, j+1, oi, oj);
+  }
   if i < oi {
-    if j > 0 {
+    if j > 0 && (i < oi - 1 || j - 1 < oj) {
       changes += check_for_cascade(map, i+1, j-1, oi, oj);
     }
     if i < oi - 1 {
@@ -114,9 +114,6 @@ fn check_for_cascade(map: &mut Vec<Vec<Spot>>, i: usize, j: usize, oi: usize, oj
       changes += change_adjacency(map, i, j, oi, oj);
     } else {
       map[i][j] = Spot::Roll(x - 1);
-      if i == 2 && j == 2 {
-        println!("From {} to {}", x, x - 1);
-      }
     }
   }
   changes
