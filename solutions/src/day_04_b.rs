@@ -12,11 +12,8 @@ enum Spot {
 
 fn get_toilet_papers(contents: String) -> u16 {
   let mut map = create_map(contents);
-  let initial_rolls = map.iter().map(|line| line.iter().map(|x| *x as u16).sum::<u16>()).sum::<u16>();
   map = set_initial_adjacency(map);
   let ans = remove_rolls(&mut map);
-  let final_rolls = map.iter().map(|line| line.iter().map(|x| if x > &0 {1u16} else {0u16}).sum::<u16>()).sum::<u16>();
-  println!("{} - {} = {}", initial_rolls, final_rolls, initial_rolls-final_rolls);
   ans
 }
 
@@ -74,7 +71,7 @@ fn set_initial_adjacency(mut map: Vec<Vec<u8>>) -> Vec<Vec<u8>> {
           }
         }
       }
-      map[i][j] = surrounding;
+      map[i][j] = surrounding.max(1);
     }
   }
   map
