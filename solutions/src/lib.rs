@@ -9,6 +9,7 @@ mod day_03_a;
 mod day_03_b;
 mod day_04_a;
 mod day_04_b;
+mod day_04_b_queue;
 
 
 pub fn run_all_days() {
@@ -20,4 +21,5 @@ pub fn run_all_days() {
     day_03_b::main("".to_string());
     day_04_a::main("".to_string());
     day_04_b::main("".to_string());
+    day_04_b_queue::main("".to_string());
 }
