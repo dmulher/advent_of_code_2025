@@ -4,12 +4,6 @@ pub fn main(contents: String) -> u16 {
   get_toilet_papers(contents)
 }
 
-#[derive(Debug, PartialEq, Eq)]
-enum Spot {
-  None,
-  Roll(u8)
-}
-
 fn get_toilet_papers(contents: String) -> u16 {
   let mut map = create_map(contents);
   map = set_initial_adjacency(map);
@@ -17,80 +11,82 @@ fn get_toilet_papers(contents: String) -> u16 {
   ans
 }
 
-fn create_map(contents: String) -> Vec<Vec<u8>> {
+fn create_map(contents: String) -> Vec<Vec<Option<u8>>> {
   contents
     .lines()
-    .map(|line| line.chars().map(|c| if c == '@' {1} else {0}).collect::<Vec<u8>>())
-    .collect::<Vec<Vec<u8>>>()
+    .map(|line| line.chars().map(|c| if c == '@' {Some(0)} else {None}).collect::<Vec<Option<u8>>>())
+    .collect::<Vec<Vec<Option<u8>>>>()
 }
 
-fn set_initial_adjacency(mut map: Vec<Vec<u8>>) -> Vec<Vec<u8>> {
+fn set_initial_adjacency(mut map: Vec<Vec<Option<u8>>>) -> Vec<Vec<Option<u8>>> {
   for i in 0..map.len() {
     for j in 0..map[0].len() {
-      if map[i][j] == 0 {
+      if map[i][j].is_none() {
         continue;
       }
       let mut surrounding: u8 = 0;
       if i > 0 {
         if j > 0 {
-          if map[i-1][j-1] > 0 {
+          if map[i-1][j-1].is_some() {
             surrounding += 1;
           }
         }
-        if map[i-1][j] > 0 {
+        if map[i-1][j].is_some() {
           surrounding += 1;
         }
         if j < map[i].len() - 1 {
-          if map[i-1][j+1] > 0 {
+          if map[i-1][j+1].is_some() {
             surrounding += 1;
           }
         }
       }
       if j > 0 {
-        if map[i][j-1] > 0 {
+        if map[i][j-1].is_some() {
           surrounding += 1;
         }
       }
       if j < map[i].len() - 1 {
-        if map[i][j+1] > 0 {
+        if map[i][j+1].is_some() {
           surrounding += 1;
         }
       }
       if i < map.len() - 1 {
         if j > 0 {
-          if map[i+1][j-1] > 0 {
+          if map[i+1][j-1].is_some() {
             surrounding += 1;
           }
         }
-        if map[i+1][j] > 0 {
+        if map[i+1][j].is_some() {
           surrounding += 1;
         }
         if j < map[i].len() - 1 {
-          if map[i+1][j+1] > 0 {
+          if map[i+1][j+1].is_some() {
             surrounding += 1;
           }
         }
       }
-      map[i][j] = surrounding.max(1);
+      map[i][j] = Some(surrounding);
     }
   }
   map
 }
 
-fn remove_rolls(map: &mut Vec<Vec<u8>>) -> u16 {
+fn remove_rolls(map: &mut Vec<Vec<Option<u8>>>) -> u16 {
   let mut rolls_removed = 0u16;
   for i in 0..map.len() {
     for j in 0..map[0].len() {
-      if map[i][j] > 0 && map[i][j] < 4 {
-        rolls_removed += remove_roll(map, i, j);
+      if let Some(x) = map[i][j] {
+        if x < 4 {
+          rolls_removed += remove_roll(map, i, j);
+        }
       }
     }
   }
   rolls_removed
 }
 
-fn remove_roll(map: &mut Vec<Vec<u8>>, i: usize, j: usize) -> u16 {
-  map[i][j] = 0;
+fn remove_roll(map: &mut Vec<Vec<Option<u8>>>, i: usize, j: usize) -> u16 {
+  map[i][j] = None;
   let mut rolls_removed = 1u16;
   if i > 0 {
     if j > 0 {
@@ -119,12 +115,14 @@ fn remove_roll(map: &mut Vec<Vec<u8>>, i: usize, j: usize) -> u16 {
   rolls_removed
 }
 
-fn check_for_cascade(map: &mut Vec<Vec<u8>>, i: usize, j: usize) -> u16 {
-  if map[i][j] > 0 && map[i][j] < 5 {
-    remove_roll(map, i, j)
-  } else if map[i][j] > 0 {
-    map[i][j] -= 1;
-    0
+fn check_for_cascade(map: &mut Vec<Vec<Option<u8>>>, i: usize, j: usize) -> u16 {
+  if let Some(x) = map[i][j] {
+    if x < 5 {
+      remove_roll(map, i, j)
+    } else {
+      map[i][j] = Some(x-1);
+      0
+    }
   } else {
     0
   }
