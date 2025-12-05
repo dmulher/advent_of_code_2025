@@ -8,23 +8,64 @@ fn get_freshness(contents: String) -> u64 {
   let (ranges_s, ids) = contents.split_once("\r\n\r\n").unwrap();
   let ranges = get_ranges(ranges_s);
   let mut fresh: u64 = 0;
-  for id in ids.lines().map(|id| id.parse::<u64>().unwrap()) {
-    for (start, end) in ranges.iter() {
-      if start <= &id && end >= &id {
+  ids
+    .lines()
+    .for_each(|id| {
+      let id = id.parse::<u64>().unwrap();
+      if id_in_range(&ranges, id) {
         fresh += 1;
-        break;
       }
-    }
-  }
+    });
   fresh
 }
 
 fn get_ranges(ranges: &str) -> Vec<(u64, u64)> {
-  ranges
+  let mut initial_ranges = ranges
     .lines()
     .map(|l| l.split_once("-").unwrap())
     .map(|(s, e)| (s.parse::<u64>().unwrap(), e.parse::<u64>().unwrap()))
-    .collect::<Vec<(u64, u64)>>()
+    .collect::<Vec<(u64, u64)>>();
+  initial_ranges.sort_by(|(a_s, _), (b_s, _)| a_s.cmp(b_s));
+
+  let mut final_ranges: Vec<(u64, u64)> = Vec::new();
+  let mut current_range = None;
+  for range in initial_ranges {
+    match current_range {
+      None => current_range = Some(range),
+      Some((c_s, c_e)) => {
+        if range.0 < c_e {
+          current_range = Some((c_s, c_e.max(range.1)));
+        } else {
+          final_ranges.push((c_s, c_e));
+          current_range = Some(range);
+        }
+      }
+    }
+  }
+  final_ranges.push(current_range.unwrap());
+  final_ranges
+}
+
+fn id_in_range(ranges: &Vec<(u64, u64)>, id: u64) -> bool {
+  let (mut low, mut high) = (0, ranges.len() - 1);
+  while high >= low {
+    let idx = (high + low) / 2;
+    let (s, e) = ranges[idx];
+    if id < s {
+      if idx == 0 {
+        return false;
+      }
+      high = idx - 1;
+    } else if id > e {
+      if idx == ranges.len() - 1 {
+        return false;
+      }
+      low = idx + 1;
+    } else {
+      return true;
+    }
+  }
+  false
 }
 
 #[cfg(test)]

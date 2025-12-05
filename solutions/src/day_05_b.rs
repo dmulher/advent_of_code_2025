@@ -58,9 +58,9 @@ mod tests {
     }
   }
 
-  // #[bench]
-  // fn bench_day_05_b(b: &mut Bencher) {
-  //   let input = read_file_to_string(utils::get_file_name(DAY, None).as_str());
-  //   b.iter(|| main(input.clone()));
-  // }
+  #[bench]
+  fn bench_day_05_b(b: &mut Bencher) {
+    let input = read_file_to_string(utils::get_file_name(DAY, None).as_str());
+    b.iter(|| main(input.clone()));
+  }
 }
