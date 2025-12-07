@@ -7,34 +7,23 @@ pub fn main(contents: String) -> u64 {
 }
 
 fn count_splits(contents: String) -> u64 {
+  let mut lines = contents.lines();
+  let mut timelines: Vec<u64> = lines.next().unwrap().chars().map(|c| if c == 'S' {1u64} else {0u64}).collect();
   contents
     .lines()
-    .fold(HashMap::<usize, u64>::new(), |mut acc, line| {
-      if acc.keys().len() == 0 {
-        HashMap::<usize, u64>::from([(line
-          .chars()
-          .enumerate()
-          .filter(|(_, c)| *c == 'S')
-          .next()
-          .unwrap()
-          .0, 1)])
-      } else {
-        let timelines = acc.clone();
-        line
-          .chars()
-          .enumerate()
-          .filter(|(idx, c)| *c == '^' && timelines.contains_key(idx))
-          .map(|(idx, _)| idx)
-          .for_each(|split| {
-            let timelines = acc.remove(&split).unwrap();
-            *acc.entry(split-1).or_insert(0) += timelines;
-            *acc.entry(split+1).or_insert(0) += timelines;
-          });
-        acc
-      }
-    })
-    .into_iter()
-    .fold(0, |acc, (_, t)| acc + t)
+    .for_each(|line| {
+      line
+        .chars()
+        .enumerate()
+        .filter(|(_, c)| *c == '^')
+        .map(|(idx, _)| idx)
+        .for_each(|split| {
+          timelines[split-1] += timelines[split];
+          timelines[split+1] += timelines[split];
+          timelines[split] = 0;
+        });
+    });
+  timelines.into_iter().sum()
 }
 
 #[cfg(test)]
@@ -44,10 +33,10 @@ mod tests {
   use utils::read_file_to_string;
 
   const DAY: u8 = 7;
-  const PART: utils::Part = utils::Part::A;
+  const PART: utils::Part = utils::Part::B;
 
   #[test]
-  fn test_day_07_a() {
+  fn test_day_07_b() {
     const EXAMPLE_ANSWER: Option<u64> = Some(40);
     const ANSWER: Option<u64> = Some(25592971184998);
     match utils::run_method::<u64>(&main, DAY, PART, (EXAMPLE_ANSWER, ANSWER)) {
@@ -58,7 +47,7 @@ mod tests {
   }
 
   #[bench]
-  fn bench_day_07_a(b: &mut Bencher) {
+  fn bench_day_07_b(b: &mut Bencher) {
     let input = read_file_to_string(utils::get_file_name(DAY, None).as_str());
     b.iter(|| main(input.clone()));
   }

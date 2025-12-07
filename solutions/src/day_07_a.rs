@@ -7,36 +7,27 @@ pub fn main(contents: String) -> u16 {
 }
 
 fn count_splits(contents: String) -> u16 {
+  let mut lines = contents.lines();
+  let mut active_beams: Vec<bool> = lines.next().unwrap().chars().map(|c| c == 'S').collect();
+  let mut splits: u16 = 0;
   contents
     .lines()
-    .fold((0u16, HashSet::<usize>::new()), |acc, line| {
-      if acc.1.len() == 0 {
-        (0, HashSet::from([line
-          .chars()
-          .enumerate()
-          .filter(|(_, c)| *c == 'S')
-          .next()
-          .unwrap()
-          .0]))
-      } else {
-        let beams = acc.1.clone();
-        let splits = line
-          .chars()
-          .enumerate()
-          .filter(|(idx, c)| *c == '^' && beams.contains(idx))
-          .map(|(idx, _)| idx);
-        let split_idxs = splits.clone().collect::<Vec<usize>>();
-        (
-          acc.0 + splits.clone().count() as u16,
-          acc.1
-            .into_iter()
-            .filter(|beam| !split_idxs.contains(beam))
-            .chain(splits.flat_map(|split| [split-1, split+1]))
-            .collect::<HashSet<usize>>()
-        )
+    .map(|line| line
+        .chars()
+        .enumerate()
+        .filter(|(_, c)| *c == '^')
+        .map(|(idx, _)| idx))
+    .for_each(|line| {
+      for idx in line {
+        if active_beams[idx] {
+          active_beams[idx] = false;
+          active_beams[idx-1] = true;
+          active_beams[idx+1] = true;
+          splits += 1;
+        }
       }
-    })
-    .0
+    });
+  splits
 }
 
 #[cfg(test)]
