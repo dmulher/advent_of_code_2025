@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 extern crate test;
 
 pub fn main(contents: String) -> u16 {
