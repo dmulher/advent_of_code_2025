@@ -200,9 +200,8 @@ fn largest_rectangle(contents: String) -> u64 {
     .fold((last_coord, AABBNode::Leaf(first_line)), |(last_coord, tree), coord| {
       (coord, tree.add(make_line(&coord, &last_coord)))
     });
-  let mut largest = 0;
-  for i in 0..coords.len() - 1 {
-    for j in i..coords.len() {
+  (0..coords.len()).fold(0, |largest, i| {
+    (0..coords.len() - 1).fold(largest, |acc, j| {
       let new_box = BBox {
         top: coords[i].0.min(coords[j].0),
         bot: coords[i].0.max(coords[j].0),
@@ -210,12 +209,13 @@ fn largest_rectangle(contents: String) -> u64 {
         right: coords[i].1.max(coords[j].1)
       };
       let volume = bbox_volume(&new_box);
-      if volume > largest && !tree.intersects(&new_box) {
-        largest = volume;
+      if volume > acc && !tree.intersects(&new_box) {
+        volume
+      } else {
+        acc
       }
-    }
-  }
-  largest
+    })
+  })
 }
 
 fn make_line(coord: &(u32, u32), last_coord: &(u32, u32)) -> Line {
