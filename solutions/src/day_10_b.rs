@@ -42,88 +42,15 @@ fn press_buttons(contents: String) -> u64 {
 
       // let options = get_gaussian_options(equations, 0, buttons.len());
       // println!("ALL OPTIONS PRESENT AND ACCOUNTED FOR:");
-      gauss_eliminate(equations, 0, buttons.len()).unwrap()
+      let ans = gauss_eliminate(equations, 0, buttons.len()).unwrap();
+      println!("{}", ans);
+      ans
     })
   .sum()
 }
 
-// fn get_gaussian_options(mut equations: Vec<(Vec<Frac>, Frac)>, col: usize, button_count: usize) -> Vec<Vec<Option<u64>>> {
-//   if col == button_count - 1 || col == equations.len() - 1 {
-//     let (mut final_eq, mut final_ans) = equations[col].clone();
-//     let div = final_eq[col];
-//     if !div.is_zero() {
-//       for i in col..final_eq.len() {
-//         final_eq[i] = final_eq[i] / div;
-//       }
-//       final_ans = final_ans / div;
-//     }
-//     equations[col] = (final_eq.clone(), final_ans);
-//     (final_eq.len()..equations.len())
-//       .for_each(|i| {
-//         let (mut curr_eq, curr_ans) = equations[i].clone();
-//         let diff = curr_eq[col];
-//         curr_eq[col] = curr_eq[col] - diff * final_eq[col];
-//         equations[i] = (curr_eq, curr_ans - diff * final_ans);
-//       });
-
-//     let mut all_possible_solutions = vec![vec![None; final_eq.len()]];
-//     let mut attempts = 0;
-//     while all_possible_solutions.iter().any(|a| a.iter().any(|b| b.is_none())) && attempts < equations.len() {
-//       all_possible_solutions = all_possible_solutions
-//         .iter()
-//         .flat_map(|solution| {
-//           get_solutions(&equations, &solution, equations.len()-1)
-//         })
-//         .collect();
-//       attempts += 1;
-//     }
-//     all_possible_solutions
-//   } else if (col..equations.len()).all(|i| equations[i].0[col].is_zero()) {
-//     get_gaussian_options(equations, col + 1, button_count)
-//   } else {
-//     (col..equations.len())
-//       // Optimise: Remove all options that are 0 at this col
-//       .filter(|rowi| !equations[*rowi].0[col].is_zero())
-//       .flat_map(|rowi| {
-//         let mut new_equations = equations.clone();
-//         // Bring variable at this col to 1
-//         let (mut munged_chosen_eq, mut munged_chosen_ans) = new_equations[rowi].clone();
-//         let div = munged_chosen_eq[col];
-//         for i in col..munged_chosen_eq.len() {
-//           munged_chosen_eq[i] = munged_chosen_eq[i] / div;
-//         }
-//         munged_chosen_ans = munged_chosen_ans / div;
-//         new_equations[rowi] = (munged_chosen_eq.clone(), munged_chosen_ans);
-//         // Shift equations
-//         if rowi > col {
-//           new_equations.swap(col, rowi);
-//         }
-//         // Eliminate
-//         (col+1..new_equations.len())
-//           .for_each(|rowj| {
-//             let (mut curr_eq, curr_ans) = new_equations[rowj].clone();
-//             let diff = curr_eq[col];
-//             for cj in col..curr_eq.len() {
-//               curr_eq[cj] = curr_eq[cj] - diff * munged_chosen_eq[cj];
-//             }
-//             new_equations[rowj] = (curr_eq, curr_ans - diff * munged_chosen_ans);
-//           });
-//         get_gaussian_options(new_equations, col + 1, button_count)
-//       })
-//       .collect()
-//   }
-// }
-
 fn gauss_eliminate(mut equations: Vec<(Vec<Frac>, Frac)>, col: usize, button_count: usize) -> Option<u64> {
-  // let debug = equations.len() == 5;
-  // if debug {
-  //   println!("equations before doing col {}:", col);
-  //   for eq in &equations {
-  //     println!("{:?}", eq);
-  //   }
-  // }
   if col == button_count - 1 || col == equations.len() - 1 {
-    // println!("Breaking free");
     let (mut final_eq, mut final_ans) = equations[col].clone();
     let div = final_eq[col];
     if !div.is_zero() {
@@ -143,24 +70,37 @@ fn gauss_eliminate(mut equations: Vec<(Vec<Frac>, Frac)>, col: usize, button_cou
 
     let mut all_possible_solutions = vec![vec![None; final_eq.len()]];
     let mut attempts = 0;
-    while all_possible_solutions.iter().any(|a| a.iter().any(|b| b.is_none())) && attempts < equations.len() {
+    let mut current_min = None;
+    while !all_possible_solutions.is_empty() && attempts < equations.len() {
+      current_min = all_possible_solutions
+        .iter()
+        .map(|a| optional_sum(&a))
+        .fold(None, |acc, small| {
+          match (acc, small) {
+            (None, None) => None,                                                                                                                                                                                                     
+            (Some(_), None) => acc,
+            (None, Some(_)) => small,
+            (Some(a), Some(b)) => Some(a.min(b))
+          }
+        });
+
       all_possible_solutions = all_possible_solutions
         .iter()
+        .filter(|b| b.iter().any(|b| b.is_none()))
         .flat_map(|solution| {
           get_solutions(&equations, &solution, equations.len()-1)
         })
         .collect();
       attempts += 1;
     }
-    // println!("-----------------Big finish time----------------");
-    // for eq in &equations {
-    //   println!("{:?}", eq);
-    // }
-    // println!("Of the following possibilities: {:?}", all_possible_solutions);
     let ans = solve(all_possible_solutions);
-    // println!("We picked the answer for {}", ans.unwrap());
 
-    ans
+    match (ans, current_min) {
+      (None, None) => None,
+      (Some(_), None) => ans,
+      (None, Some(_)) => current_min,
+      (Some(a), Some(b)) => Some(a.min(b))
+    }
   } else if (col..equations.len()).all(|i| equations[i].0[col].is_zero()) {
     gauss_eliminate(equations, col + 1, button_count)
   } else {
@@ -193,14 +133,26 @@ fn gauss_eliminate(mut equations: Vec<(Vec<Frac>, Frac)>, col: usize, button_cou
           });
         gauss_eliminate(new_equations, col + 1, button_count)
       })
-      .fold(None, |acc, solution| {
-        match (acc, solution) {
-          (None, a) => a,
-          (a, None) => a,
-          (Some(a), Some(b)) => Some(a.min(b))
-        }
-      })
+      .filter_map(|thing| thing)
+      .next()
+      // .fold(None, |acc, solution| {
+      //   match (acc, solution) {
+      //     (None, a) => a,
+      //     (a, None) => a,
+      //     (Some(a), Some(b)) => Some(a.min(b))
+      //   }
+      // })
   }
+}
+
+fn optional_sum(op: &Vec<Option<u64>>) -> Option<u64> {
+  op
+    .iter()
+    .fold(Some(0), |acc, optional| match (acc, optional) {
+      (None, _) => None,
+      (_, None) => None,
+      (Some(a), Some(b)) => Some(a + *b)
+    })
 }
 
 fn solve(solutions: Vec<Vec<Option<u64>>>) -> Option<u64> {
@@ -219,17 +171,6 @@ fn get_solutions(equations: &Vec<(Vec<Frac>, Frac)>, solved_variables: &Vec<Opti
 
   let vars_to_solve_iter = vars_to_solve_iter.enumerate();
   let all_options = get_all_ranges(coeffs, current_ans);
-  let debug = equations.len() == 7;
-  // if debug {
-  //   println!("--------------Solution attempt as {}--------------", to_solve);
-  //   println!("Solving for:");
-  //   for eq in equations.iter() {
-  //     println!("{:?}", eq);
-  //   }
-  //   println!("Already solved: {:?}", solved_variables);
-  //   println!("Trying to solve: {:?}", vars_to_solve_iter.clone().map(|(_, b)| b).collect::<Vec<usize>>());
-  //   println!("options include: {:?}", all_options);
-  // }
   if all_options.is_empty() {
     if to_solve == 0 {
       vec![solved_variables.clone()]
@@ -290,8 +231,8 @@ fn get_all_ranges(coeffs: Vec<Frac>, target_num: Frac) -> Vec<Vec<u32>> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use test::Bencher;
-  use utils::read_file_to_string;
+  // use test::Bencher;
+  // use utils::read_file_to_string;
 
   const DAY: u8 = 10;
   const PART: utils::Part = utils::Part::B;
@@ -299,7 +240,7 @@ mod tests {
   #[test]
   fn test_day_10_b() {
     const EXAMPLE_ANSWER: Option<u64> = Some(33);
-    const ANSWER: Option<u64> = None;
+    const ANSWER: Option<u64> = None;  // 16463 was too low
     match utils::run_method::<u64>(&main, DAY, PART, (EXAMPLE_ANSWER, ANSWER)) {
       Err(message) => panic!("{}", message),
       Ok(val) if ANSWER.is_none() => println!("Answer for day {DAY}-{} = {val}", PART.lower_name()),
