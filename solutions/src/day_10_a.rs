@@ -3,10 +3,10 @@ use std::collections::{HashMap, VecDeque};
 extern crate test;
 
 pub fn main(contents: String) -> u16 {
-  largest_rectangle(contents)
+  press_buttons(contents)
 }
 
-fn largest_rectangle(contents: String) -> u16 {
+fn press_buttons(contents: String) -> u16 {
   contents
     .lines()
     .map(|line| {
