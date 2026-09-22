@@ -44,6 +44,8 @@ pub struct Frac {
 }
 
 impl Frac {
+  const ONE: Frac = Frac{num: 1,den: 1};
+
   pub fn new(numerator: i16, denominator: i16) -> Self {
     if numerator == 0 {
       Frac{
@@ -60,6 +62,10 @@ impl Frac {
 
   pub fn is_zero(&self) -> bool {
     self.num == 0
+  }
+
+  pub fn is_one(&self) -> bool {
+    self.num == self.den
   }
 
   pub fn is_whole(&self) -> bool {
